@@ -25,7 +25,17 @@ module Lecture2
     , evenLists
     , dropSpaces
 
+    , Health (..)
+    , Attack (..)
+    , Endurance (..)
+    , Gold (..)
+    , Exp (..)
     , Knight (..)
+    , Treasure (..)
+    , Chest (..)
+    , DragonType (..)
+    , Dragon (..)
+    , FightOutcome (..)
     , dragonFight
 
       -- * Hard
@@ -39,6 +49,8 @@ module Lecture2
     , eval
     , constantFolding
     ) where
+import Data.Char (isSpace)
+import Data.List (dropWhileEnd)
 
 -- VVV If you need to import libraries, do it after this line ... VVV
 
@@ -52,7 +64,10 @@ zero, you can stop calculating product and return 0 immediately.
 84
 -}
 lazyProduct :: [Int] -> Int
-lazyProduct = error "TODO"
+lazyProduct xs = case xs of
+  [] -> 1
+  (0 : _) -> 0
+  (y : ys) -> y * lazyProduct ys
 
 {- | Implement a function that duplicates every element in the list.
 
@@ -62,7 +77,7 @@ lazyProduct = error "TODO"
 "ccaabb"
 -}
 duplicate :: [a] -> [a]
-duplicate = error "TODO"
+duplicate = concatMap (\x -> [x, x])
 
 {- | Implement function that takes index and a list and removes the
 element at the given position. Additionally, this function should also
@@ -74,7 +89,14 @@ return the removed element.
 >>> removeAt 10 [1 .. 5]
 (Nothing,[1,2,3,4,5])
 -}
-removeAt = error "TODO"
+removeAt :: Int -> [a] -> (Maybe a, [a])
+removeAt _ [] = (Nothing, [])
+removeAt 0 (x : xs) = (Just x, xs)
+removeAt n (x : xs)
+  | n < 0 = (Nothing, x : xs)
+  | otherwise =
+      let (removed, rest) = removeAt (n - 1) xs
+       in (removed, x : rest)
 
 {- | Write a function that takes a list of lists and returns only
 lists of even lengths.
@@ -85,7 +107,8 @@ lists of even lengths.
 ♫ NOTE: Use eta-reduction and function composition (the dot (.) operator)
   in this function.
 -}
-evenLists = error "TODO"
+evenLists :: [[a]] -> [[a]]
+evenLists = filter (even . length)
 
 {- | The @dropSpaces@ function takes a string containing a single word
 or number surrounded by spaces and removes all leading and trailing
@@ -101,7 +124,8 @@ spaces.
 
 🕯 HINT: look into Data.Char and Prelude modules for functions you may use.
 -}
-dropSpaces = error "TODO"
+dropSpaces :: String -> String
+dropSpaces = takeWhile (not . isSpace) . dropWhile isSpace
 
 {- |
 
@@ -157,14 +181,77 @@ You're free to define any helper functions.
        treasure besides gold (if you already haven't done this).
 -}
 
--- some help in the beginning ;)
-data Knight = Knight
-    { knightHealth    :: Int
-    , knightAttack    :: Int
-    , knightEndurance :: Int
-    }
+newtype Health = Health Int deriving (Show, Eq)
 
-dragonFight = error "TODO"
+newtype Attack = Attack Int deriving (Show, Eq)
+
+newtype Endurance = Endurance Int deriving (Show, Eq)
+
+newtype Gold = Gold Int deriving (Show, Eq)
+
+newtype Exp = Exp Int deriving (Show, Eq)
+
+data Treasure = A | B | C
+  deriving (Show, Eq)
+
+data Chest treasure = Chest
+  { chestGold :: Gold,
+    chestTreasure :: Maybe treasure
+  }
+  deriving (Show, Eq)
+
+data Knight = Knight
+  { knightHealth :: Health,
+    knightAttack :: Attack,
+    knightEndurance :: Endurance
+  }
+  deriving (Show, Eq)
+
+data DragonType = Red | Black | Green
+  deriving (Show, Eq)
+
+data Dragon treasure = Dragon
+  { dragonHealth :: Health,
+    dragonFirePower :: Attack,
+    dragonType :: DragonType,
+    dragonChest :: Chest treasure
+  }
+  deriving (Show, Eq)
+
+data FightOutcome treasure
+  = KnightVictory Exp (Chest treasure)
+  | KnightDefeat
+  | KnightRunAway
+  deriving (Show, Eq)
+
+dragonExp :: DragonType -> Exp
+dragonExp Red = Exp 100
+dragonExp Black = Exp 150
+dragonExp Green = Exp 250
+
+retrieveChest :: Dragon treasure -> Chest treasure
+retrieveChest dragon = case dragonType dragon of
+  Green -> (dragonChest dragon) {chestTreasure = Nothing}
+  _ -> dragonChest dragon
+
+dragonFight :: Knight -> Dragon treasure -> FightOutcome treasure
+dragonFight = fight 1
+  where
+    fight :: Int -> Knight -> Dragon treasure -> FightOutcome treasure
+    fight _ (Knight (Health kh) _ _) _ | kh <= 0 = KnightDefeat
+    fight _ _ dragon@(Dragon (Health dh) _ dt _)
+      | dh <= 0 = KnightVictory (dragonExp dt) (retrieveChest dragon)
+    fight _ (Knight _ _ (Endurance ke)) _ | ke <= 0 = KnightRunAway
+    fight
+      n
+      (Knight (Health kh) (Attack ka) (Endurance ke))
+      (Dragon (Health dh) (Attack df) dt dc) =
+        let dh' = Health (dh - ka)
+            ke' = Endurance (ke - 1)
+            kh' = Health (if n `mod` 10 == 0 then kh - df else kh)
+            knight' = Knight kh' (Attack ka) ke'
+            dragon' = Dragon dh' (Attack df) dt dc
+         in fight (n + 1) knight' dragon'
 
 ----------------------------------------------------------------------------
 -- Extra Challenges

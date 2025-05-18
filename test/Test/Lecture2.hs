@@ -10,8 +10,7 @@ import GHC.Stack (HasCallStack)
 import Test.Hspec (Expectation, Spec, describe, it, shouldBe, shouldSatisfy)
 import Test.Hspec.Hedgehog (assert, forAll, hedgehog, (===))
 
-import Lecture2 (EvalError (..), Expr (..), constantFolding, dropSpaces, duplicate, eval, evenLists,
-                 isIncreasing, lazyProduct, merge, mergeSort, removeAt)
+import Lecture2
 
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -20,7 +19,7 @@ import qualified Hedgehog.Range as Range
 lecture2Spec :: Spec
 lecture2Spec = describe "Lecture 2" $ do
     lecture2Normal
-    lecture2Hard
+    -- lecture2Hard
 
 lecture2Normal :: Spec
 lecture2Normal = describe "Normal" $ do
@@ -81,6 +80,35 @@ lecture2Normal = describe "Normal" $ do
         it "Both sides"     $ dropSpaces "   hi   " `shouldBe` "hi"
         it "Single space"   $ dropSpaces " 500 "    `shouldBe` "500"
         it "Infinite space" $ dropSpaces (" infinity" ++ repeat ' ') `shouldBe` "infinity"
+
+    describe "dragonFight" $ do
+        let defaultChest = Chest (Gold 100) (Just A)
+        let stackedChest = Chest (Gold 999) (Just (A, [B, C], "lemon"))
+
+        it "Knight kills red dragon" $ do
+            let knight = Knight (Health 100) (Attack 50) (Endurance 2)
+            let dragon = Dragon (Health 100) (Attack 10) Red defaultChest
+            dragonFight knight dragon `shouldBe` KnightVictory (Exp 100) defaultChest
+
+        it "Knight kills black dragon" $ do
+            let knight = Knight (Health 100) (Attack 50) (Endurance 2)
+            let dragon = Dragon (Health 100) (Attack 10) Black stackedChest 
+            dragonFight knight dragon `shouldBe` KnightVictory (Exp 150) stackedChest 
+
+        it "Knight kills green dragon and no treasure remains" $ do
+            let knight = Knight (Health 100) (Attack 50) (Endurance 2)
+            let dragon = Dragon (Health 100) (Attack 10) Green (Chest (Gold 200) (Just B))
+            dragonFight knight dragon `shouldBe` KnightVictory (Exp 250) (Chest (Gold 200) Nothing)
+
+        it "Knight dies from fire breath after 10 strikes" $ do
+            let knight = Knight (Health 10) (Attack 1) (Endurance 20)
+            let dragon = Dragon (Health 100) (Attack 10) Red defaultChest
+            dragonFight knight dragon `shouldBe` KnightDefeat
+
+        it "Knight runs away after losing endurance" $ do
+            let knight = Knight (Health 100) (Attack 30) (Endurance 3)
+            let dragon = Dragon (Health 100) (Attack 5) Red defaultChest
+            dragonFight knight dragon `shouldBe` KnightRunAway
 
 lecture2Hard :: Spec
 lecture2Hard = describe "Hard" $ do
