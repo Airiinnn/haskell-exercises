@@ -272,7 +272,9 @@ False
 True
 -}
 isIncreasing :: [Int] -> Bool
-isIncreasing = error "TODO"
+isIncreasing [] = True
+isIncreasing [_] = True
+isIncreasing (x : y : zs) = x < y && isIncreasing (y : zs)
 
 {- | Implement a function that takes two lists, sorted in the
 increasing order, and merges them into new list, also sorted in the
@@ -285,7 +287,11 @@ verify that.
 [1,2,3,4,7]
 -}
 merge :: [Int] -> [Int] -> [Int]
-merge = error "TODO"
+merge [] ys = ys
+merge xs [] = xs
+merge (x : xs) (y : ys)
+  | x < y = x : merge xs (y : ys)
+  | otherwise = y : merge (x : xs) ys
 
 {- | Implement the "Merge Sort" algorithm in Haskell. The @mergeSort@
 function takes a list of numbers and returns a new list containing the
@@ -302,7 +308,11 @@ The algorithm of merge sort is the following:
 [1,2,3]
 -}
 mergeSort :: [Int] -> [Int]
-mergeSort = error "TODO"
+mergeSort [] = []
+mergeSort [x] = [x]
+mergeSort xs = merge (mergeSort left) (mergeSort right)
+  where
+    (left, right) = splitAt (length xs `div` 2) xs
 
 
 {- | Haskell is famous for being a superb language for implementing
@@ -355,7 +365,14 @@ data EvalError
 It returns either a successful evaluation result or an error.
 -}
 eval :: Variables -> Expr -> Either EvalError Int
-eval = error "TODO"
+eval _ (Lit n) = Right n
+eval vars (Var k) = case lookup k vars of
+  Just v -> Right v
+  Nothing -> Left (VariableNotFound k)
+eval vars (Add x y) = do
+  v1 <- eval vars x
+  v2 <- eval vars y
+  return (v1 + v2)
 
 {- | Compilers also perform optimizations! One of the most common
 optimizations is "Constant Folding". It performs arithmetic operations
@@ -380,3 +397,4 @@ Folding" optimization on the given expression.
 -}
 constantFolding :: Expr -> Expr
 constantFolding = error "TODO"
+-- TODO: Implement constantFolding

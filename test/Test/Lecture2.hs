@@ -19,7 +19,7 @@ import qualified Hedgehog.Range as Range
 lecture2Spec :: Spec
 lecture2Spec = describe "Lecture 2" $ do
     lecture2Normal
-    -- lecture2Hard
+    lecture2Hard
 
 lecture2Normal :: Spec
 lecture2Normal = describe "Normal" $ do
