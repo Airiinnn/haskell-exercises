@@ -396,5 +396,22 @@ Write a function that takes and expression and performs "Constant
 Folding" optimization on the given expression.
 -}
 constantFolding :: Expr -> Expr
-constantFolding = error "TODO"
--- TODO: Implement constantFolding
+constantFolding expr = rebuild $ combineLits $ flatten expr
+  where
+    flatten :: Expr -> [Expr]
+    flatten (Add e1 e2) = flatten e1 ++ flatten e2
+    flatten e = [e]
+
+    combineLits :: [Expr] -> [Expr]
+    combineLits exprs
+      | litsSum == 0 = vars
+      | otherwise = Lit litsSum : vars
+      where
+        lits = [n | Lit n <- exprs]
+        vars = [Var n | Var n <- exprs]
+        litsSum = sum lits
+
+    rebuild :: [Expr] -> Expr
+    rebuild [] = Lit 0
+    rebuild [e] = e
+    rebuild (x : xs) = Add x (rebuild xs)
