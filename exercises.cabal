@@ -22,6 +22,8 @@ source-repository head
 
 common common-options
   build-depends:       base >= 4.14 && < 4.17
+                     , split
+                     , MissingH
 
   ghc-options:         -Wall
                        -Wcompat
